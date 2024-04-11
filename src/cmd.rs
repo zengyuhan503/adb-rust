@@ -1,7 +1,18 @@
+use std::future::Future;
 use std::path::Path;
 
 use tokio::io::{AsyncBufReadExt, BufReader}; // 确保导入所需的trait
 use tokio::process::Command;
+pub trait ADBCmdTrait {
+    fn new(cmd: String, is_shell: bool) -> Self;
+    fn create_cmd(self) -> Command;
+    async fn run_async<F>(&self, args: Vec<String>, fnc: F)
+    where
+        F: FnMut(String) -> String + 'static;
+    fn run(&self, args: Vec<String>) -> impl Future<Output = Result<String, String>>;
+    fn get_var_arg(self, args: Vec<String>) -> impl Future<Output = bool>;
+    fn get_file_path(path: &str) -> Result<String, String>;
+}
 
 /// ADBCmd allows you to execute adb commands asynchronously.
 #[derive(Debug, Clone)]
@@ -9,11 +20,11 @@ pub struct ADBCmd {
     cmd: String,
     is_shell: bool,
 }
-impl ADBCmd {
-    pub fn new(cmd: String, is_shell: bool) -> Self {
+impl ADBCmdTrait for ADBCmd {
+    fn new(cmd: String, is_shell: bool) -> Self {
         ADBCmd { cmd, is_shell }
     }
-    pub fn create_cmd(self) -> Command {
+    fn create_cmd(self) -> Command {
         let mut command = Command::new(self.cmd);
         if self.is_shell {
             command.arg("shell");
@@ -34,7 +45,7 @@ impl ADBCmd {
     ///     line
     /// }).await;
     /// ```
-    pub async fn run_async<F>(&self, args: Vec<String>, mut fnc: F)
+    async fn run_async<F>(&self, args: Vec<String>, mut fnc: F)
     where
         F: FnMut(String) -> String + 'static,
     {
@@ -66,7 +77,7 @@ impl ADBCmd {
     ///
     /// let result = adb_cmd.run(vec!["devices".to_string()]);
     /// ```
-    pub async fn run(&self, args: Vec<String>) -> Result<String, String> {
+    async fn run(&self, args: Vec<String>) -> Result<String, String> {
         // let output = std::process::Command::new(self.cmd).args(args).output();
         let output = <ADBCmd as Clone>::clone(&self)
             .create_cmd()
@@ -90,7 +101,6 @@ impl ADBCmd {
     }
 
     /// Get variable on command
-
     /// ```no_run
     ///  let mut arg=String::from("mmi");
     ///  let exec_args=vec![];
@@ -109,7 +119,7 @@ impl ADBCmd {
     ///  let res= ADBCmd::new("adb",false).run(exec_args);
     ///  
     /// ```
-    pub async fn get_var_arg(self, args: Vec<String>) -> bool {
+    async fn get_var_arg(self, args: Vec<String>) -> bool {
         let res = self.run(args).await;
         match res {
             Ok(_) => true,
@@ -120,7 +130,7 @@ impl ADBCmd {
     /// ```no_run
     ///  let res= ADBCmd::new("adb",false).get_file_path("./resources/file.xml");
     /// ```
-    pub fn get_file_path(path: &str) -> Result<String, String> {
+    fn get_file_path(path: &str) -> Result<String, String> {
         let mut _custom_path = Path::new(path).canonicalize();
         match _custom_path {
             Ok(p) => Ok(p.as_os_str().to_string_lossy().to_string()),
