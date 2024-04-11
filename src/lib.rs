@@ -1,9 +1,8 @@
 pub mod cmd;
 
-
 #[cfg(test)]
 mod tests {
-    use crate::cmd::ADBCmd;
+    use crate::cmd::{ADBCmd, ADBCmdTrait};
 
     use super::*;
     use tokio;
