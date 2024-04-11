@@ -1,5 +1,6 @@
 use std::future::Future;
 use std::path::Path;
+use std::process::Child;
 
 use tokio::io::{AsyncBufReadExt, BufReader}; // 确保导入所需的trait
 use tokio::process::Command;
@@ -9,7 +10,7 @@ pub trait ADBCmdTrait {
     async fn run_async<F>(&self, args: Vec<String>, fnc: F)
     where
         F: FnMut(String) -> String + 'static;
-    fn run(&self, args: Vec<String>) -> impl Future<Output = Result<String, String>>;
+    fn run(&self, args: Vec<String>) -> Result<String, String>;
     fn get_var_arg(self, args: Vec<String>) -> impl Future<Output = bool>;
     fn get_file_path(path: &str) -> Result<String, String>;
 }
@@ -45,7 +46,7 @@ impl ADBCmdTrait for ADBCmd {
     ///     line
     /// }).await;
     /// ```
-    async fn run_async<F>(&self, args: Vec<String>, mut fnc: F) 
+    async fn run_async<F>(&self, args: Vec<String>, mut fnc: F)
     where
         F: FnMut(String) -> String + 'static,
     {
@@ -77,15 +78,12 @@ impl ADBCmdTrait for ADBCmd {
     ///
     /// let result = adb_cmd.run(vec!["devices".to_string()]);
     /// ```
-    async fn run(&self, args: Vec<String>) -> Result<String, String> {
-        // let output = std::process::Command::new(self.cmd).args(args).output();
-        let output = <ADBCmd as Clone>::clone(&self)
-            .create_cmd()
-            .args(args)
-            .output();
-        match output.await {
+    fn run(&self, args: Vec<String>) -> Result<String, String> {
+        let output = std::process::Command::new(&self.cmd).args(args).output();
+        match output {
             Ok(child) => {
-                if child.status.success() {
+                let out = child.status.success();
+                if out {
                     let stdout = String::from_utf8_lossy(&child.stdout).to_string();
                     Ok(stdout)
                 } else {
@@ -93,10 +91,7 @@ impl ADBCmdTrait for ADBCmd {
                     Err(stderr)
                 }
             }
-            Err(err) => {
-                let err_str = format!("Failed to execute Adb command： {}", err) as String;
-                Err(err_str)
-            }
+            Err(err) => Err(format!("Failed to execute command：{}", err)),
         }
     }
 
@@ -120,7 +115,7 @@ impl ADBCmdTrait for ADBCmd {
     ///  
     /// ```
     async fn get_var_arg(self, args: Vec<String>) -> bool {
-        let res = self.run(args).await;
+        let res = self.run(args);
         match res {
             Ok(_) => true,
             Err(_) => false,
