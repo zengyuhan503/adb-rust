@@ -14,7 +14,7 @@ Currently, this library is primarily used for invoking "cmd" commands in Rust, p
 ```toml
 [dependencies]
 tokio = { version = "1.0", features = ["full"] }
-adb-rust="0.1.6"
+adb-rust="0.2.1"
 ```
 - Invocation
 ```rust
