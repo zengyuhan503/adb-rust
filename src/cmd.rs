@@ -74,7 +74,7 @@ impl ADBCmdTrait for ADBCmd {
     ///
     /// use ADB::cmd::ADBCmd;
     ///
-    /// let adb_cmd = ADBCmd::new();
+    /// let adb_cmd = ADBCmd::new("cmd".to_string(),false);
     ///
     /// let result = adb_cmd.run(vec!["devices".to_string()]);
     /// ```
