@@ -162,11 +162,51 @@
 <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">push_xml_file</span>(){
     <span class="hljs-keyword">let</span> <span class="hljs-variable">file</span>:&amp;<span class="hljs-type">str</span>= <span class="hljs-string">&quot;./resources/file.xml&quot;</span>
     <span class="hljs-keyword">let</span> <span class="hljs-variable">paths</span>:<span class="hljs-type">String</span> = ADBCmd::<span class="hljs-title function_ invoke__">get_file_path</span>(file).<span class="hljs-title function_ invoke__">unwrap</span>();
-    <span class="hljs-keyword">let</span> <span class="hljs-variable">args</span> = <span class="hljs-built_in">vec!</span>[<span class="hljs-string">&quot;push&quot;</span>,&amp;paths,<span class="hljs-string">&quot;/sdcard/&quot;</span>];
-    <span class="hljs-keyword">let</span> <span class="hljs-variable">res</span> = ADBCmd::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;adb&quot;</span>,<span class="hljs-literal">true</span>).<span class="hljs-title function_ invoke__">run</span>(args);
+    <span class="hljs-keyword">let</span> <span class="hljs-variable">args</span>:<span class="hljs-type">Vec</span>&lt;&amp;<span class="hljs-type">String</span>&gt; = <span class="hljs-built_in">vec!</span>[<span class="hljs-string">&quot;push&quot;</span>.<span class="hljs-title function_ invoke__">to_string</span>(),&amp;paths,<span class="hljs-string">&quot;/sdcard/&quot;</span>.<span class="hljs-title function_ invoke__">to_string</span>()];
+    <span class="hljs-keyword">let</span> <span class="hljs-variable">res</span>:<span class="hljs-type">Result</span>&lt;<span class="hljs-type">String</span>, <span class="hljs-type">String</span>&gt; = ADBCmd::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;adb&quot;</span>,<span class="hljs-literal">true</span>).<span class="hljs-title function_ invoke__">run</span>(args);
     ...
     ...        
 }
+
+</code></pre>
+<h3 id="api">APi</h3>
+<pre><code class="language-rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">mod</span> tests {
+    <span class="hljs-keyword">use</span> crate::cmd::{ADBCmd, ADBCmdTrait};
+
+    <span class="hljs-keyword">use</span> super::*;
+    <span class="hljs-keyword">use</span> tokio;
+
+    <span class="hljs-meta">#[test]</span>
+
+    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">test_adb_cmd</span>() {
+        <span class="hljs-keyword">let</span> <span class="hljs-variable">res</span> = cmd::ADBCmd::<span class="hljs-title function_ invoke__">get_file_path</span>(<span class="hljs-string">&quot;./resources/file.xml&quot;</span>).<span class="hljs-title function_ invoke__">unwrap</span>();
+        <span class="hljs-keyword">let</span> <span class="hljs-variable">res</span> = res.<span class="hljs-title function_ invoke__">replace</span>(<span class="hljs-string">&quot;\\\\?\\&quot;</span>, <span class="hljs-string">&quot;&quot;</span>);
+        <span class="hljs-keyword">let</span> <span class="hljs-variable">args</span> = <span class="hljs-built_in">vec!</span>[<span class="hljs-string">&quot;push&quot;</span>.<span class="hljs-title function_ invoke__">to_string</span>(), res, <span class="hljs-string">&quot;/data/local/tmp/&quot;</span>.<span class="hljs-title function_ invoke__">to_string</span>()];
+        <span class="hljs-keyword">let</span> <span class="hljs-variable">binding</span> = ADBCmd::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;adb&quot;</span>.<span class="hljs-title function_ invoke__">to_string</span>(), <span class="hljs-literal">false</span>);
+        <span class="hljs-keyword">let</span> <span class="hljs-variable">child</span> = binding.<span class="hljs-title function_ invoke__">run</span>(args);
+        <span class="hljs-keyword">match</span> child {
+            <span class="hljs-title function_ invoke__">Ok</span>(stdout) =&gt; {
+                <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;{}&quot;</span>, stdout)
+            }
+            <span class="hljs-title function_ invoke__">Err</span>(stderr) =&gt; {
+                <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;{}&quot;</span>, stderr)
+            }
+        }
+    }
+
+    <span class="hljs-meta">#[tokio::test]</span>
+    <span class="hljs-keyword">async</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">test_run_async</span>() {
+        <span class="hljs-keyword">let</span> <span class="hljs-variable">adb_cmd</span> = ADBCmd::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;adb&quot;</span>.<span class="hljs-title function_ invoke__">to_string</span>(), <span class="hljs-literal">false</span>);
+        <span class="hljs-keyword">let</span> <span class="hljs-variable">args</span> = [<span class="hljs-string">&quot;devices&quot;</span>.<span class="hljs-title function_ invoke__">to_string</span>()];
+        adb_cmd
+            .<span class="hljs-title function_ invoke__">run_async</span>(args.<span class="hljs-title function_ invoke__">to_vec</span>(), |line| {
+                <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;{}&quot;</span>, line);
+                line
+            })
+            .<span class="hljs-keyword">await</span>;
+    }
+}
+
 
 </code></pre>
 
