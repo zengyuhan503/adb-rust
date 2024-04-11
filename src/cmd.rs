@@ -79,8 +79,12 @@ impl ADBCmdTrait for ADBCmd {
     /// let result = adb_cmd.run(vec!["devices".to_string()]);
     /// ```
     fn run(&self, args: Vec<String>) -> Result<String, String> {
-        let output = std::process::Command::new(&self.cmd).args(args).output();
-        match output {
+        let mut output = std::process::Command::new(&self.cmd);
+        if self.is_shell {
+            output.arg("shell".to_string());
+        }
+        output.args(args);
+        match output.output() {
             Ok(child) => {
                 let out = child.status.success();
                 if out {
