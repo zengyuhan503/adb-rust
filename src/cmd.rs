@@ -45,7 +45,7 @@ impl ADBCmdTrait for ADBCmd {
     ///     line
     /// }).await;
     /// ```
-    async fn run_async<F>(&self, args: Vec<String>, mut fnc: F)
+    async fn run_async<F>(&self, args: Vec<String>, mut fnc: F) 
     where
         F: FnMut(String) -> String + 'static,
     {
