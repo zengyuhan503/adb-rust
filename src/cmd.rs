@@ -80,8 +80,9 @@ impl ADBCmdTrait for ADBCmd {
     /// let result = adb_cmd.run(vec!["devices".to_string()]);
     /// ```
     fn run(&self, args: Vec<String>) -> Result<String, String> {
-        let mut output = std::process::Command::new(&self.cmd);
-        output.arg("/c");
+        let mut output = std::process::Command::new("cmd");
+        output.arg("/C");
+        output.arg(&self.cmd);
         if self.is_shell {
             output.arg("shell".to_string());
         }
