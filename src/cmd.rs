@@ -1,6 +1,7 @@
 use std::future::Future;
 use std::path::Path;
 use std::process::Child;
+use std::process::Stdio;
 
 use tokio::io::{AsyncBufReadExt, BufReader}; // 确保导入所需的trait
 use tokio::process::Command;
@@ -52,6 +53,7 @@ impl ADBCmdTrait for ADBCmd {
     {
         let mut cmd = <ADBCmd as Clone>::clone(&self)
             .create_cmd()
+            .arg("/c")
             .args(args)
             .stdout(std::process::Stdio::piped()) // 将标准输出重定向到管道
             .spawn() // 启动子进程
@@ -67,8 +69,7 @@ impl ADBCmdTrait for ADBCmd {
             }
         }
     }
-    // run runs the given adb command synchronously.
-
+    /// run runs the given adb command synchronously.
     /// ```no_run
     /// use std::process::Command;
     ///
@@ -80,22 +81,23 @@ impl ADBCmdTrait for ADBCmd {
     /// ```
     fn run(&self, args: Vec<String>) -> Result<String, String> {
         let mut output = std::process::Command::new(&self.cmd);
+        output.arg("/c");
         if self.is_shell {
             output.arg("shell".to_string());
         }
         output.args(args);
-        match output.output() {
-            Ok(child) => {
-                let out = child.status.success();
-                if out {
-                    let stdout = String::from_utf8_lossy(&child.stdout).to_string();
-                    Ok(stdout)
-                } else {
-                    let stderr = String::from_utf8_lossy(&child.stderr).to_string();
-                    Err(stderr)
-                }
-            }
-            Err(err) => Err(format!("Failed to execute command：{}", err)),
+        let child = output
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .output()
+            .map_err(|err| format!("Failed command : {}", err))?;
+        let stdout: String = String::from_utf8_lossy(&child.stdout).to_string();
+        let stderr: String = String::from_utf8_lossy(&child.stderr).to_string();
+
+        if !stderr.is_empty() {
+            Err(stderr)
+        } else {
+            Ok(stdout)
         }
     }
 

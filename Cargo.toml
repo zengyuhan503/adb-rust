@@ -1,6 +1,6 @@
 [package]
 name = "adb-rust" # 你的包名
-version = "0.2.1" # 初始版本号
+version = "0.2.2" # 初始版本号
 edition = "2018" # Rust 版本
 authors = ["Zengyuhan <zengyuhan503@gmail.com>"] # 作者信息
 license = "MIT" # 许可证

@@ -17,10 +17,10 @@ mod tests {
         let child = binding.run(args);
         match child {
             Ok(stdout) => {
-                println!("{}", stdout)
+                println!("stdout{}", stdout)
             }
             Err(stderr) => {
-                println!("{}", stderr)
+                println!("stderr{}", stderr)
             }
         }
     }
