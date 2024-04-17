@@ -1,6 +1,7 @@
 use std::future::Future;
 use std::path::Path;
 use std::process::Child;
+use std::process::Output;
 use std::process::Stdio;
 
 use tokio::io::{AsyncBufReadExt, BufReader}; // 确保导入所需的trait
@@ -14,6 +15,7 @@ pub trait ADBCmdTrait {
     fn run(&self, args: Vec<String>) -> Result<String, String>;
     fn get_var_arg(self, args: Vec<String>) -> impl Future<Output = bool>;
     fn get_file_path(path: &str) -> Result<String, String>;
+    fn exec(&self, args: Vec<String>) -> Result<Output, String>;
 }
 
 /// ADBCmd allows you to execute adb commands asynchronously.
@@ -100,6 +102,21 @@ impl ADBCmdTrait for ADBCmd {
         } else {
             Ok(stdout)
         }
+    }
+    fn exec(&self, args: Vec<String>) -> Result<Output, String> {
+        let mut output = std::process::Command::new("cmd");
+        output.arg("/C");
+        output.arg(&self.cmd);
+        if self.is_shell {
+            output.arg("shell".to_string());
+        }
+        output.args(args);
+        let child = output
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .output()
+            .map_err(|err| format!("Failed command : {}", err));
+        child
     }
 
     /// Get variable on command
