@@ -3,7 +3,7 @@ use std::path::Path;
 use std::process::Child;
 use std::process::Output;
 use std::process::Stdio;
-
+use std::os::windows::process::CommandExt;
 use tokio::io::{AsyncBufReadExt, BufReader}; // 确保导入所需的trait
 use tokio::process::Command;
 pub trait ADBCmdTrait {
@@ -18,6 +18,7 @@ pub trait ADBCmdTrait {
     fn exec(&self, args: Vec<String>) -> Result<Output, String>;
 }
 
+const CREATE_NO_WINDOW: u32 = 0x08000000;
 /// ADBCmd allows you to execute adb commands asynchronously.
 #[derive(Debug, Clone)]
 pub struct ADBCmd {
@@ -55,6 +56,7 @@ impl ADBCmdTrait for ADBCmd {
     {
         let mut cmd = <ADBCmd as Clone>::clone(&self)
             .create_cmd()
+            .creation_flags(CREATE_NO_WINDOW)
             .arg("/c")
             .args(args)
             .stdout(std::process::Stdio::piped()) // 将标准输出重定向到管道
@@ -90,6 +92,7 @@ impl ADBCmdTrait for ADBCmd {
         }
         output.args(args);
         let child = output
+            .creation_flags(CREATE_NO_WINDOW)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .output()
