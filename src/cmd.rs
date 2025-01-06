@@ -1,9 +1,8 @@
 use std::future::Future;
+use std::os::windows::process::CommandExt;
 use std::path::Path;
-use std::process::Child;
 use std::process::Output;
 use std::process::Stdio;
-use std::os::windows::process::CommandExt;
 use tokio::io::{AsyncBufReadExt, BufReader}; // 确保导入所需的trait
 use tokio::process::Command;
 pub trait ADBCmdTrait {
@@ -16,18 +15,22 @@ pub trait ADBCmdTrait {
     fn get_var_arg(self, args: Vec<String>) -> impl Future<Output = bool>;
     fn get_file_path(path: &str) -> Result<String, String>;
     fn exec(&self, args: Vec<String>) -> Result<Output, String>;
+    fn change_shell(&mut self,shell:bool);
 }
 
 const CREATE_NO_WINDOW: u32 = 0x08000000;
 /// ADBCmd allows you to execute adb commands asynchronously.
 #[derive(Debug, Clone)]
 pub struct ADBCmd {
-    cmd: String,
-    is_shell: bool,
+    pub cmd: String,
+    pub is_shell: bool,
 }
 impl ADBCmdTrait for ADBCmd {
     fn new(cmd: String, is_shell: bool) -> Self {
         ADBCmd { cmd, is_shell }
+    }
+    fn change_shell(&mut self,shell:bool) {
+        self.is_shell=shell;
     }
     fn create_cmd(self) -> Command {
         let mut command = Command::new(self.cmd);
