@@ -1,3 +1,4 @@
+use std::env;
 use std::future::Future;
 use std::os::windows::process::CommandExt;
 use std::path::Path;
@@ -27,7 +28,21 @@ pub struct ADBCmd {
 }
 impl ADBCmdTrait for ADBCmd {
     fn new(cmd: String, is_shell: bool) -> Self {
-        ADBCmd { cmd, is_shell }
+        let mut run_cmd = cmd.clone();
+        if cmd == "adb".to_string() {
+            let resoureces = env::current_exe().expect("无法获取可执行文件路径");
+            let adb_resources = resoureces
+                .parent()
+                .unwrap()
+                .join("resources")
+                .join("adb")
+                .join("adb.exe");
+            if adb_resources.exists() {
+                run_cmd = adb_resources.to_string_lossy().to_string();
+            }
+        }
+
+        ADBCmd { cmd:run_cmd, is_shell }
     }
     fn change_shell(&mut self,shell:bool) {
         self.is_shell=shell;
