@@ -41,7 +41,6 @@ impl ADBCmdTrait for ADBCmd {
                 run_cmd = adb_resources.to_string_lossy().to_string();
             }
         }
-        println!("run_cmd:{}", run_cmd);
         ADBCmd { cmd:run_cmd, is_shell }
     }
     fn change_shell(&mut self,shell:bool) {
