@@ -30,7 +30,7 @@ impl ADBCmdTrait for ADBCmd {
     fn new(cmd: String, is_shell: bool) -> Self {
         let mut run_cmd = cmd.clone();
         if cmd == "adb".to_string() {
-            let resoureces = env::current_exe().expect("无法获取可执行文件路径");
+            let resoureces: std::path::PathBuf = env::current_exe().expect("无法获取可执行文件路径");
             let adb_resources = resoureces
                 .parent()
                 .unwrap()
@@ -41,7 +41,7 @@ impl ADBCmdTrait for ADBCmd {
                 run_cmd = adb_resources.to_string_lossy().to_string();
             }
         }
-
+        println!("run_cmd:{}", run_cmd);
         ADBCmd { cmd:run_cmd, is_shell }
     }
     fn change_shell(&mut self,shell:bool) {
